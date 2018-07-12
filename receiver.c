@@ -12,7 +12,7 @@
 int main(int argc, char **argv)
 {
 	if (argc != 4) {
-		printf("Usage: RECEIVER [ip] [port] [multicast ip]\n");
+		printf("Usage: RECEIVER [ip] [port] [multicast_ip]\n");
 		return -1;
 	}
 
@@ -30,10 +30,11 @@ int main(int argc, char **argv)
 	memset(&server, 0, server_size);
 	server.sin_family = AF_INET;
 	server.sin_port = htons(atoi(argv[2]));
-	server.sin_addr.s_addr = inet_addr(argv[1]);
+	server.sin_addr.s_addr = inet_addr(argv[3]);
 	memset(&mreq, 0, sizeof(mreq));
 	mreq.imr_multiaddr.s_addr = inet_addr(argv[3]);
 	mreq.imr_interface.s_addr = inet_addr(argv[1]);
+
 	if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
 		perror("setsockopt-reuseaddr");
 		return -4;
@@ -44,10 +45,6 @@ int main(int argc, char **argv)
 	}
 	if (setsockopt(sock_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0) {
 		perror("setsockopt-add_mbrship");
-		return -4;
-	}
-	if (setsockopt(sock_fd, IPPROTO_IP, IP_MULTICAST_ALL, &on, sizeof(on)) < 0) {
-		perror("setsockopt-mcast_loop");
 		return -4;
 	}
 
