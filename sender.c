@@ -14,7 +14,7 @@ int main(int argc, char **argv)
 		printf("Usage: UDP_CLIENT [address] [port] [msg_type] (0 for \"Hello!\", 1 for \"Quit\")\n");
 		return -2;
 	}
-	int socket_fd, ret;
+	int socket_fd, ret, on = 1;
 	size_t len;
 	struct sockaddr_in target;
 	socklen_t target_size;
@@ -39,8 +39,10 @@ int main(int argc, char **argv)
 		sprintf(buf, "Hello!");
 	}
 
-	printf("%s\n", buf);
-
+	if (setsockopt(socket_fd, IPPROTO_IP, IP_MULTICAST_LOOP, &on, sizeof(on)) < 0) {
+		perror("setsockopt-mcast_if");
+		return -4;
+	}
 
 	ret = sendto(socket_fd, buf, len, 0, (struct sockaddr*)&target, target_size);
 	if (ret == -1) {

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(broadcast)
+project(multicast)
 
 set(CMAKE_C_STANDARD 99)
 

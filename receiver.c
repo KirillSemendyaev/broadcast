@@ -9,8 +9,6 @@
 #include <arpa/inet.h>
 #include <poll.h>
 
-#define CL_NUM 2
-
 int main(int argc, char **argv)
 {
 	if (argc != 4) {
@@ -33,7 +31,7 @@ int main(int argc, char **argv)
 	server.sin_family = AF_INET;
 	server.sin_port = htons(atoi(argv[2]));
 	server.sin_addr.s_addr = inet_addr(argv[1]);
-
+	memset(&mreq, 0, sizeof(mreq));
 	mreq.imr_multiaddr.s_addr = inet_addr(argv[3]);
 	mreq.imr_interface.s_addr = inet_addr(argv[1]);
 	if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
@@ -44,11 +42,14 @@ int main(int argc, char **argv)
 		perror("setsockopt-reuseport");
 		return -4;
 	}
-	if (setsockopt(sock_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &on, sizeof(on)) < 0) {
-		perror("setsockopt-reuseport");
+	if (setsockopt(sock_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0) {
+		perror("setsockopt-add_mbrship");
 		return -4;
 	}
-
+	if (setsockopt(sock_fd, IPPROTO_IP, IP_MULTICAST_ALL, &on, sizeof(on)) < 0) {
+		perror("setsockopt-mcast_loop");
+		return -4;
+	}
 
 	if (bind(sock_fd, (struct sockaddr *) &server, server_size) == -1) {
 		perror("bind");
@@ -61,14 +62,9 @@ int main(int argc, char **argv)
 		recvfrom(sock_fd, buf, len, 0, (struct sockaddr *) &target, &target_size);
 		printf("UDP Connection from %s:%d\n", inet_ntoa(target.sin_addr), ntohs(target.sin_port));
 		if (strcmp(buf, "Quit") != 0) {
-			strcpy(buf + 5, " world!");
-			sendto(sock_fd, buf, len, MSG_CONFIRM, (struct sockaddr *) &target, target_size);
-			printf("Replied\n");
-			continue;
+			printf("%s\n", buf);
 		} else {
-			strcpy(buf, "OK!");
-			sendto(sock_fd, buf, len, MSG_CONFIRM, (struct sockaddr *) &target, target_size);
-			printf("I QUIT\n");
+			printf("%s\n", buf);
 			break;
 		}
 
